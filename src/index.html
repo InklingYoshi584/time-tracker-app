@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Time Tracker</title>
+    <title>BOOK OF TIMES</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th, td {
+            border: 1px solid rgba(221, 221, 221, 0);
+            padding: 8px;
+            text-align: center; /* Center-align all table headers and cells */
+        }
+        th {
+            background-color: #d0cdcd;
+        }
         .popup {
             display: none;
             position: fixed;
-            top: 50%;
+            top: 20%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 20px;
+            padding: 40px;
             background: white;
             border: 1px solid #ccc;
             z-index: 1000;
@@ -21,7 +27,7 @@
     </style>
 </head>
 <body>
-<h1>Time Tracker</h1>
+<h1>Time Tracker & Planner</h1>
 <table>
     <thead>
     <tr>
@@ -29,21 +35,34 @@
         <th>End Time</th>
         <th>Event</th>
         <th>Duration</th>
+        <th>Actions</th>
     </tr>
     </thead>
     <tbody id="entries"></tbody>
 </table>
 
-<button id="addBtn" onclick="popup">Add Entry</button>
+<button id="addBtn">Add Entry</button>
 
-<div id="popup" class="popup">
+<div id="addEntryPopup" class="popup">
     <h2>Add Time Entry</h2>
-    <form id="entryForm">
-        <label>Start Time (HH:MM): <input type="text" id="startTime" required></label><br>
-        <label>End Time (HH:MM): <input type="text" id="endTime" required></label><br>
-        <label>Event: <input type="text" id="event" required></label><br>
+    <form id="addEntryForm">
+        <label>Start Time: <input type="number" id="addStartTime" class="startTime" required></label><br>
+        <label>End Time: <input type="number" id="addEndTime" class="endTime" required></label><br>
+        <label>Event: <input type="text" id="addEvent" class="event" required></label><br>
         <button type="submit">Save</button>
-        <button type="button" id="cancelBtn">Cancel</button>
+        <button type="button" id="addCancelBtn">Cancel</button>
+    </form>
+</div>
+
+
+<div id="editEntryPopup" class="popup">
+    <h2>Edit Time Entry</h2>
+    <form id="editEntryForm">
+        <label>Start Time: <input type="text" id="editStartTime" required></label><br>
+        <label>End Time: <input type="text" id="editEndTime" required></label><br>
+        <label>Event: <input type="text" id="editEvent" required></label><br>
+        <button type="submit">Save</button>
+        <button type="button" id="editCancelBtn">Cancel</button>
     </form>
 </div>
 

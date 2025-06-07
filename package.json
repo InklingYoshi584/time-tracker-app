@@ -1,13 +1,13 @@
 {
   "name": "time-tracker-app",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "main": "dist/main.js",
   "scripts": {
     "start": "electron-forge start",
     "build": "tsc && copyfiles -u 1 src/**/*.{html,js} dist",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "dosth": "npm install copyfiles --save-dev"
+    "build&start": "tsc && copyfiles -u 1 src/**/*.{html,js} dist && electron-forge start"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",

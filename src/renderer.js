@@ -1,9 +1,11 @@
 // DOM Elements
 const entriesTable = document.getElementById('entries');
 const addBtn = document.getElementById('addBtn');
-const popup = document.getElementById('popup');
-const entryForm = document.getElementById('entryForm');
-const cancelBtn = document.getElementById('cancelBtn');
+const addEntryPopup = document.getElementById('addEntryPopup');
+const entryForm = document.getElementById('addEntryForm');
+const addCancelBtn = document.getElementById('addCancelBtn');
+const editBtn = document.getElementById('editBtn');
+const editEntryPopup = document.getElementById('editEntryPopup');
 
 // Format time input (e.g., "930" -> "09:30")
 function formatTime(input) {
@@ -11,15 +13,16 @@ function formatTime(input) {
     return `${clean.slice(0, 2)}:${clean.slice(2)}`;
 }
 
-// Load entries from main process
+// Load entries from the main process
 async function loadEntries() {
     const entries = await window.electronAPI.getEntries();
     entriesTable.innerHTML = entries.map(entry => `
     <tr>
-      <td>${entry.start_time}</td>
-      <td>${entry.end_time}</td>
+      <td>${entry.startTime}</td>
+      <td>${entry.endTime}</td>
       <td>${entry.event}</td>
       <td>${entry.duration} min</td>
+      <td><button class="editBtn" data-id="${entry.id}">Edit</button></td>
     </tr>
   `).join('');
 }
@@ -28,9 +31,9 @@ async function loadEntries() {
 entryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    let startTime = document.getElementById('startTime').value;
-    let endTime = document.getElementById('endTime').value;
-    const event = document.getElementById('event').value;
+    let startTime = document.getElementById('addStartTime').value;
+    let endTime = document.getElementById('addEndTime').value;
+    const event = document.getElementById('addEvent').value;
 
     // Format times if needed
     if (!startTime.includes(':')) startTime = formatTime(startTime);
@@ -38,7 +41,7 @@ entryForm.addEventListener('submit', async (e) => {
 
     try {
         await window.electronAPI.addEntry({ startTime, endTime, event });
-        popup.style.display = 'none';
+        addEntryPopup.style.display = 'none';
         await loadEntries();
         entryForm.reset();
     } catch (err) {
@@ -48,13 +51,19 @@ entryForm.addEventListener('submit', async (e) => {
 
 // UI Event Listeners
 addBtn.addEventListener('click', () => {
-    popup.style.display = 'block';
+    addEntryPopup.style.display = 'block';
 });
 
-cancelBtn.addEventListener('click', () => {
-    popup.style.display = 'none';
+addCancelBtn.addEventListener('click', () => {
+    addEntryPopup.style.display = 'none';
     entryForm.reset();
 });
 
+editBtn.addEventListener('click', () => {
+    editEntryPopup.style.display = 'block';
+})
+
 // Initial load
-document.addEventListener('DOMContentLoaded', loadEntries);
+document.addEventListener('DOMContentLoaded', () => {
+    loadEntries();
+});
