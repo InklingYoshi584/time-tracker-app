@@ -61,9 +61,15 @@
         <label>Start Time: <input type="text" id="editStartTime" required></label><br>
         <label>End Time: <input type="text" id="editEndTime" required></label><br>
         <label>Event: <input type="text" id="editEvent" required></label><br>
-        <button type="submit">Save</button>
+        <button id="editComfBtn">Save</button>
         <button type="button" id="editCancelBtn">Cancel</button>
     </form>
+</div>
+
+<div id="deleteEntryPopup" class="popup">
+    <h2>Delete this Entry?</h2>
+    <button id="deleteComfBtn">Delete!</button>
+    <button id="deleteCancelBtn">No</button>
 </div>
 
 <script src="renderer.js"></script>

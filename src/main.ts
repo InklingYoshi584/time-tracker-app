@@ -47,6 +47,23 @@ ipcMain.handle('add-entry', (_, { startTime, endTime, event }) => {
   `).run(startTime, endTime, event, duration);
 });
 
+ipcMain.handle('delete-entry', (_, deleteid: number) => {
+    if (isNaN(deleteid)) {
+        console.error('Invalid ID format');
+        return;
+    }
+
+    try {
+        const result = db.prepare(
+    "DELETE FROM time_entries WHERE id = ?"
+        ).run(deleteid);
+        return { success: true, changes: result.changes };
+    } catch (err) {
+        console.error('Delete failed:', err);
+        return { success: false };
+    }
+})
+
 function calculateDuration(startTime: string, endTime: string): number | null {
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = endTime.split(':').map(Number);

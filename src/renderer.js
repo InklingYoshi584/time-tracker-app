@@ -1,12 +1,23 @@
 // DOM Elements
 const entriesTable = document.getElementById('entries');
+
 const addBtn = document.getElementById('addBtn');
 const addEntryPopup = document.getElementById('addEntryPopup');
 const entryForm = document.getElementById('addEntryForm');
 const addCancelBtn = document.getElementById('addCancelBtn');
-const editBtn = document.getElementById('editBtn');
-const editEntryPopup = document.getElementById('editEntryPopup');
 
+const editEntryPopup = document.getElementById('editEntryPopup');
+const editEntryForm = document.getElementById('editEntryForm');
+const editCancelBtn = document.getElementById('editCancelBtn');
+const editComfirmBtn = document.getElementById('editComfirmBtn');
+
+const deleteEntryPopup = document.getElementById('deleteEntryPopup');
+const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+const deleteConfirmBtn = document.getElementById('deleteComfBtn');
+
+let lastClickedEntryId = null;
+
+deleteID = 0
 // Format time input (e.g., "930" -> "09:30")
 function formatTime(input) {
     const clean = input.replace(/\D/g, '').padStart(4, '0');
@@ -22,7 +33,7 @@ async function loadEntries() {
       <td>${entry.endTime}</td>
       <td>${entry.event}</td>
       <td>${entry.duration} min</td>
-      <td><button class="editBtn" data-id="${entry.id}">Edit</button></td>
+      <td><button class="edit-btn" data-id="${entry.id}">Edit</button>  <button class="delete-btn" data-id="${entry.id}">Delete</button></td>
     </tr>
   `).join('');
 }
@@ -59,10 +70,40 @@ addCancelBtn.addEventListener('click', () => {
     entryForm.reset();
 });
 
-//TODO: Add editBtn function without triggering an error
-// editBtn.addEventListener('click', () => {
-//     editEntryPopup.style.display = 'block';
-// })
+editCancelBtn.addEventListener('click', () => {
+    editEntryForm.reset();
+    editEntryPopup.style.display = 'none';
+})
+
+deleteCancelBtn.addEventListener('click', async (e) => {
+    deleteEntryPopup.style.display = 'none';
+})
+
+deleteConfirmBtn.addEventListener('click', async () => {
+    console.log(lastClickedEntryId);
+    console.log('deleting entry with id:', lastClickedEntryId);
+    await window.electronAPI.deleteEntry(lastClickedEntryId)
+    deleteEntryPopup.style.display = 'none';
+    await loadEntries();
+})
+
 
 // Initial load
-document.addEventListener('DOMContentLoaded', loadEntries);
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadEntries();
+    document.getElementById('entries').addEventListener('click', (e) => {
+        const button = e.target.closest('button[data-id]');
+        if (button) {
+            lastClickedEntryId = parseInt(button.dataset.id, 10);
+            console.log('Stored ID:', lastClickedEntryId); // Verify in DevTools
+        }
+
+        if (button.classList.contains('edit-btn')) {
+            editEntryPopup.style.display = 'block';
+        }
+        else if (button.classList.contains('delete-btn')) {
+            deleteEntryPopup.style.display = 'block';
+        }
+    });
+
+});
