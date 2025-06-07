@@ -59,11 +59,10 @@ addCancelBtn.addEventListener('click', () => {
     entryForm.reset();
 });
 
-editBtn.addEventListener('click', () => {
-    editEntryPopup.style.display = 'block';
-})
+//TODO: Add editBtn function without triggering an error
+// editBtn.addEventListener('click', () => {
+//     editEntryPopup.style.display = 'block';
+// })
 
 // Initial load
-document.addEventListener('DOMContentLoaded', () => {
-    loadEntries();
-});
+document.addEventListener('DOMContentLoaded', loadEntries);

@@ -24,7 +24,6 @@ function createWindow() {
             sandbox: true
         }
     });
-    ipcRenderer.invoke('get-entries')
     mainWindow.loadFile('dist/index.html');
 }
 
