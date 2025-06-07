@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Time Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<h1>Time Tracker</h1>
+<table>
+    <thead>
+    <tr>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Event</th>
+        <th>Duration</th>
+    </tr>
+    </thead>
+    <tbody id="entries"></tbody>
+</table>
+
+<button id="addBtn" onclick="popup">Add Entry</button>
+
+<div id="popup" class="popup">
+    <h2>Add Time Entry</h2>
+    <form id="entryForm">
+        <label>Start Time (HH:MM): <input type="text" id="startTime" required></label><br>
+        <label>End Time (HH:MM): <input type="text" id="endTime" required></label><br>
+        <label>Event: <input type="text" id="event" required></label><br>
+        <button type="submit">Save</button>
+        <button type="button" id="cancelBtn">Cancel</button>
+    </form>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
