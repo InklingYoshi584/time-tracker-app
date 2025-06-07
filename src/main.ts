@@ -47,6 +47,29 @@ ipcMain.handle('add-entry', (_, { startTime, endTime, event }) => {
   `).run(startTime, endTime, event, duration);
 });
 
+ipcMain.handle('get-entry-by-id', (_, id) => {
+    return db.prepare("SELECT * FROM time_entries WHERE id = ?").get(id);
+});
+
+ipcMain.handle('update-entry', (_, entry) => {
+    const duration = calculateDuration(entry.startTime, entry.endTime);
+
+    if (duration === null) throw new Error('its a null!');
+
+    db.prepare(`
+        UPDATE time_entries 
+        SET startTime = ?, endTime = ?, event = ?, duration = ?
+        WHERE id = ?
+    `).run(
+        entry.startTime,
+        entry.endTime,
+        entry.event,
+        duration,
+        entry.id
+    );
+});
+
+
 ipcMain.handle('delete-entry', (_, deleteid: number) => {
     if (isNaN(deleteid)) {
         console.error('Invalid ID format');

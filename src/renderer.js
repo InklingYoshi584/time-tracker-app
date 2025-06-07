@@ -87,11 +87,32 @@ deleteConfirmBtn.addEventListener('click', async () => {
     await loadEntries();
 })
 
+document.getElementById('editEntryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    let editStartTime = document.getElementById("editStartTime").value;
+    let editEndTime = document.getElementById("editEndTime").value;
+
+    if (!editEndTime.includes(':')) editEndTime = formatTime(editEndTime);
+    if (!editStartTime.includes(':')) editStartTime = formatTime(editStartTime);
+
+    const updatedEntry = {
+        id: lastClickedEntryId,
+        startTime: editStartTime,
+        endTime: editEndTime,
+        event: document.getElementById('editEvent').value
+    };
+
+    await window.electronAPI.updateEntry(updatedEntry);
+    await loadEntries(); // Refresh the table
+    document.getElementById('editEntryPopup').style.display = 'none';
+});
+
 
 // Initial load
 document.addEventListener('DOMContentLoaded', async () => {
     await loadEntries();
-    document.getElementById('entries').addEventListener('click', (e) => {
+    document.getElementById('entries').addEventListener('click', async (e) => {
         const button = e.target.closest('button[data-id]');
         if (button) {
             lastClickedEntryId = parseInt(button.dataset.id, 10);
@@ -99,9 +120,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (button.classList.contains('edit-btn')) {
-            editEntryPopup.style.display = 'block';
-        }
-        else if (button.classList.contains('delete-btn')) {
+            const entry = await window.electronAPI.getEntryById(lastClickedEntryId);
+            if (entry) {
+                document.getElementById('editStartTime').value = entry.startTime;
+                document.getElementById('editEndTime').value = entry.endTime;
+                document.getElementById('editEvent').value = entry.event;
+
+                // 4. Show the edit popup
+                document.getElementById('editEntryPopup').style.display = 'block';
+            }
+        } else if (button.classList.contains('delete-btn')) {
             deleteEntryPopup.style.display = 'block';
         }
     });
