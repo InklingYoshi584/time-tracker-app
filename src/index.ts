@@ -120,6 +120,17 @@ function createMainWindow() {
 
         <script>
           const { ipcRenderer } = require('electron');
+          
+        function formatTimeStrict(input) {
+            const cleanInput = input.replace(/:/g, '').padStart(4, '0');
+    
+            if (cleanInput.length === 4) {
+                return \`\${cleanInput.slice(0, 2)}:\${cleanInput.slice(2)}\`;
+            }
+    
+            throw new Error("Invalid time format");
+        }
+
 
           const loadEntries = () => {
             ipcRenderer.invoke('get-entries').then((entries) => {
@@ -150,8 +161,14 @@ function createMainWindow() {
 
           document.getElementById('timeEntryForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
+            let startTime = document.getElementById('startTime').value;
+            if (!startTime.includes(':')) {
+                startTime = formatTimeStrict(startTime);
+            }
+            let endTime = document.getElementById('endTime').value;
+            if (!endTime.includes(':')) {
+                endTime = formatTimeStrict(endTime);
+            }
             const event = document.getElementById('event').value;
 
             ipcRenderer.invoke('add-entry', { startTime, endTime, event }).then((error) => {
