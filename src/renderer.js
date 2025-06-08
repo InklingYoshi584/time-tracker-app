@@ -18,6 +18,41 @@ const deleteConfirmBtn = document.getElementById('deleteComfBtn');
 let lastClickedEntryId = null;
 
 deleteID = 0
+
+
+let currentDisplayDate = new Date();
+
+function formatDate(date) {
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+async function updateDisplay() {
+    // Update the header
+    return document.getElementById('current-date-display').textContent =
+        currentDisplayDate.toLocaleDateString();
+}
+
+async function filterEntries() {
+
+    // Load entries for this date
+    return await window.electronAPI.getEntriesByDate(
+        formatDate(currentDisplayDate)
+    );
+}
+
+// Navigation handlers
+document.getElementById('prev-day').addEventListener('click', () => {
+    currentDisplayDate.setDate(currentDisplayDate.getDate() - 1);
+    loadEntries();
+});
+
+document.getElementById('next-day').addEventListener('click', () => {
+    currentDisplayDate.setDate(currentDisplayDate.getDate() + 1);
+    loadEntries();
+});
+
+
+
 // Format time input (e.g., "930" -> "09:30")
 function formatTime(input) {
     const clean = input.replace(/\D/g, '').padStart(4, '0');
@@ -26,7 +61,9 @@ function formatTime(input) {
 
 // Load entries from the main process
 async function loadEntries() {
-    const entries = await window.electronAPI.getEntries();
+    await updateDisplay();
+
+    const entries = await filterEntries();
     entriesTable.innerHTML = entries.map(entry => `
     <tr>
       <td>${entry.startTime}</td>
@@ -111,27 +148,28 @@ document.getElementById('editEntryForm').addEventListener('submit', async (e) =>
 
 // Initial load
 document.addEventListener('DOMContentLoaded', async () => {
+    currentDisplayDate = new Date(); // Today
     await loadEntries();
     document.getElementById('entries').addEventListener('click', async (e) => {
         const button = e.target.closest('button[data-id]');
-        if (button) {
-            lastClickedEntryId = parseInt(button.dataset.id, 10);
-            console.log('Stored ID:', lastClickedEntryId); // Verify in DevTools
-        }
-
-        if (button.classList.contains('edit-btn')) {
-            const entry = await window.electronAPI.getEntryById(lastClickedEntryId);
-            if (entry) {
-                document.getElementById('editStartTime').value = entry.startTime;
-                document.getElementById('editEndTime').value = entry.endTime;
-                document.getElementById('editEvent').value = entry.event;
-
-                // 4. Show the edit popup
-                document.getElementById('editEntryPopup').style.display = 'block';
+            if (button) {
+                lastClickedEntryId = parseInt(button.dataset.id, 10);
+                console.log('Stored ID:', lastClickedEntryId); // Verify in DevTools
             }
-        } else if (button.classList.contains('delete-btn')) {
-            deleteEntryPopup.style.display = 'block';
-        }
+
+            if (button.classList.contains('edit-btn')) {
+                const entry = await window.electronAPI.getEntryById(lastClickedEntryId);
+                if (entry) {
+                    document.getElementById('editStartTime').value = entry.startTime;
+                    document.getElementById('editEndTime').value = entry.endTime;
+                    document.getElementById('editEvent').value = entry.event;
+
+                    // 4. Show the edit popup
+                    document.getElementById('editEntryPopup').style.display = 'block';
+                }
+            } else if (button.classList.contains('delete-btn')) {
+                deleteEntryPopup.style.display = 'block';
+            }
     });
 
 });
