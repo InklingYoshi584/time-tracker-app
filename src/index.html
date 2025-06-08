@@ -13,6 +13,12 @@
         th {
             background-color: #d0cdcd;
         }
+
+        .date-navigator {
+            font-family: Arial, sans-serif; padding: 20px; font-size: 40px;
+            text-align: center
+        }
+
         .popup {
             display: none;
             position: fixed;
@@ -28,6 +34,9 @@
 </head>
 <body>
 <h1>Time Tracker & Planner</h1>
+<div class="date-navigator">
+    <button id="prev-day">←</button> <text id="current-date-display">Loading date...</text> <button id="next-day">→</button>
+</div>
 <table>
     <thead>
     <tr>
