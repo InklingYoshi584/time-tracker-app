@@ -1,3 +1,5 @@
+import connectAndSync from "./main"
+
 // DOM Elements
 const entriesTable = document.getElementById('entries');
 
@@ -16,9 +18,6 @@ const deleteCancelBtn = document.getElementById('deleteCancelBtn');
 const deleteConfirmBtn = document.getElementById('deleteComfBtn');
 
 let lastClickedEntryId = null;
-
-deleteID = 0
-
 
 let currentDisplayDate = new Date();
 
@@ -123,6 +122,23 @@ deleteConfirmBtn.addEventListener('click', async () => {
     deleteEntryPopup.style.display = 'none';
     await loadEntries();
 })
+
+
+document.getElementById('sync-button').addEventListener('click', async () => {
+    const pin = document.getElementById('pin-input').value;
+    if (pin.length !== 6) {
+        alert('Please enter a 6-digit PIN');
+        return;
+    }
+
+    const success = await connectAndSync(pin);
+    if (success) {
+        alert('Data synced successfully!');
+    } else {
+        alert('Sync failed. Please try again.');
+    }
+});
+
 
 document.getElementById('editEntryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
