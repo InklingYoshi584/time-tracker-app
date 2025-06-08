@@ -37,6 +37,9 @@
 <div class="date-navigator">
     <button id="prev-day">←</button> <text id="current-date-display">Loading date...</text> <button id="next-day">→</button>
 </div>
+<br>
+<br>
+<br>
 <table>
     <thead>
     <tr>
@@ -49,8 +52,44 @@
     </thead>
     <tbody id="entries"></tbody>
 </table>
-
+<br>
+<br>
+<br>
 <button id="addBtn">Add Entry</button>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<table>
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Experience</th>
+        <th>Rating</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="experienceEntries"></tbody>
+</table>
+<br>
+<br>
+<br>
+<button id="addExpBtn">Add Experience Entry</button>
+
+
+<div id="addExperienceEntryPopup" class="popup">
+    <h2>Add Experience Entry</h2>
+    <form id="addExperienceEntryForm">
+        <label>Experience: <input type="text" id="addExperience" required></label><br>
+        <button type="submit" id="addExperienceEntrySaveBtn">Save</button>
+        <button type="button" id="addExperienceEntryCancelBtn">Cancel</button>
+    </form>
+</div>
+
+
+
 
 <div id="addEntryPopup" class="popup">
     <h2>Add Time Entry</h2>
@@ -75,10 +114,26 @@
     </form>
 </div>
 
+<div id="editExperienceEntryPopup" class="popup">
+    <h2>Edit Experience Entry</h2>
+    <form id="editExperienceEntryForm">
+        <label>Event: <input type="text" id="editExperience" required></label><br>
+        <button type="submit" id="editExperienceComfBtn">Save</button>
+        <button type="button" id="editExperienceCancelBtn">Cancel</button>
+    </form>
+</div>
+
+
 <div id="deleteEntryPopup" class="popup">
     <h2>Delete this Entry?</h2>
     <button id="deleteComfBtn">Delete!</button>
     <button id="deleteCancelBtn">No</button>
+</div>
+
+<div id="deleteExperienceEntryPopup" class="popup">
+    <h2>Delete this Entry?</h2>
+    <button id="deleteExperienceComfBtn">Delete!</button>
+    <button id="deleteExperienceCancelBtn">No</button>
 </div>
 
 <script src="renderer.js"></script>

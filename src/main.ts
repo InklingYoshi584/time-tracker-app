@@ -7,12 +7,21 @@ const db = new Database('time-tracker.db');
 db.exec(`
   CREATE TABLE IF NOT EXISTS time_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entryDate TIMESTAMP NOT NULL DEFAULT CURRENT_DATE,
-    startTime TIMESTAMP NOT NULL,
-    endTime TIMESTAMP NOT NULL,
-    event TIMESTAMP NOT NULL,
+    entryDate TEXT NOT NULL DEFAULT CURRENT_DATE,
+    startTime TEXT NOT NULL,
+    endTime TEXT NOT NULL,
+    event TEXT NOT NULL,
     duration INTEGER NOT NULL
   )
+`);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS experience_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        experienceEntryDate TIMESTAMP NOT NULL DEFAULT CURRENT_DATE,
+        experienceEntry STRING NOT NULL,
+        experienceEntryRating INTEGER NOT NULL
+    )
 `);
 
 function createWindow() {
@@ -37,6 +46,17 @@ ipcMain.handle('get-entries', () => {
         return [];
     }
 });
+
+ipcMain.handle('add-experience-entry', (_, {experience}) => {
+    const date = new Date().toISOString().split('T')[0]; // Current date
+
+
+    db.prepare(`
+    INSERT INTO experience_entries (experienceEntryDate, ExperienceEntry, ExperienceEntryRating)
+    VALUES (?, ?, ?)
+  `).run(date, experience, 0);
+})
+
 
 //handle time entry addition
 ipcMain.handle('add-entry', (_, { startTime, endTime, event }) => {
@@ -77,6 +97,28 @@ ipcMain.handle('update-entry', (_, entry) => {
     );
 });
 
+ipcMain.handle('update-experience-entry', (_, entry) => {
+    db.prepare(`
+        UPDATE experience_entries 
+        SET experienceEntry = ?
+        WHERE id = ?
+    `).run(
+        entry.experienceEntry,
+        entry.id
+    );
+});
+
+//handle getting experience entries
+ipcMain.handle("get-experience-entries", (_) => {
+    try {
+        return db.prepare("SELECT * FROM experience_entries ORDER BY id ASC").all();
+    } catch (err) {
+        console.error('Database error:', err);
+        return null;
+    }
+})
+
+
 // handle getting entries by date
 ipcMain.handle('get-entries-by-date', (_, date) => {
     return db.prepare(`
@@ -85,6 +127,11 @@ ipcMain.handle('get-entries-by-date', (_, date) => {
     ORDER BY startTime ASC
   `).all(date);
 });
+
+ipcMain.handle('get-experience-entry-by-id', (_, id) => {
+    return db.prepare("SELECT * FROM experience_entries WHERE id = ?").get(id);
+});
+
 ipcMain.handle('delete-entry', (_, deleteid: number) => {
     if (isNaN(deleteid)) {
         console.error('Invalid ID format');
@@ -101,6 +148,24 @@ ipcMain.handle('delete-entry', (_, deleteid: number) => {
         return { success: false };
     }
 })
+
+ipcMain.handle('delete-experience-entry', (_, deleteid: number) => {
+    if (isNaN(deleteid)) {
+        console.error('Invalid ID format');
+        return;
+    }
+
+    try {
+        const result = db.prepare(
+            "DELETE FROM experience_entries WHERE id = ?"
+        ).run(deleteid);
+        return { success: true, changes: result.changes };
+    } catch (err) {
+        console.error('Delete failed:', err);
+        return { success: false };
+    }
+})
+
 
 function calculateDuration(startTime: string, endTime: string): number | null {
     const [startH, startM] = startTime.split(':').map(Number);

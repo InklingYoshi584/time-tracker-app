@@ -1,5 +1,8 @@
 // DOM Elements
 const entriesTable = document.getElementById('entries');
+const experienceEntriesTable = document.getElementById('experienceEntries');
+const addExperienceEntryForm = document.getElementById('addExperienceEntryForm');
+const addExperienceEntryPopup = document.getElementById('addExperienceEntryPopup');
 
 const addBtn = document.getElementById('addBtn');
 const addEntryPopup = document.getElementById('addEntryPopup');
@@ -9,16 +12,18 @@ const addCancelBtn = document.getElementById('addCancelBtn');
 const editEntryPopup = document.getElementById('editEntryPopup');
 const editEntryForm = document.getElementById('editEntryForm');
 const editCancelBtn = document.getElementById('editCancelBtn');
-const editComfirmBtn = document.getElementById('editComfirmBtn');
 
 const deleteEntryPopup = document.getElementById('deleteEntryPopup');
 const deleteCancelBtn = document.getElementById('deleteCancelBtn');
 const deleteConfirmBtn = document.getElementById('deleteComfBtn');
 
+const deleteExperiencePopup = document.getElementById('deleteExperienceEntryPopup');
+const deleteExperienceCancelBtn = document.getElementById('deleteExperienceCancelBtn');
+const deleteExperienceComfBtn = document.getElementById('deleteExperienceComfBtn');
+
+
+
 let lastClickedEntryId = null;
-
-deleteID = 0
-
 
 let currentDisplayDate = new Date();
 
@@ -73,7 +78,37 @@ async function loadEntries() {
       <td><button class="edit-btn" data-id="${entry.id}">Edit</button>  <button class="delete-btn" data-id="${entry.id}">Delete</button></td>
     </tr>
   `).join('');
+
+    const experienceEntries = await window.electronAPI.getExperienceEntries();
+    experienceEntriesTable.innerHTML = experienceEntries.map(experienceEntry => `
+    <tr>
+        <td>${experienceEntry.experienceEntryDate}</td>
+        <td>${experienceEntry.experienceEntry}</td>
+        <td>${experienceEntry.experienceEntryRating}</td>
+        <td><button class="edit-exp-btn" data-id="${experienceEntry.id}">Edit</button><button class="delete-exp-btn" data-id="${experienceEntry.id}">Delete</button><button class="rate-exp-btn" data-id="${experienceEntry.id}">Rate</button></td>
+    </tr>
+    `)
+
 }
+
+document.getElementById('addExpBtn').addEventListener('click', () => {
+    addExperienceEntryPopup.style.display = 'block';
+})
+
+addExperienceEntryForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let experience = document.getElementById('addExperience').value;
+
+    try {
+        await window.electronAPI.addExperienceEntry({ experience });
+        addExperienceEntryPopup.style.display = 'none';
+        await loadEntries();
+        addExperienceEntryForm.reset();
+    } catch (err) {
+        alert(err.message);
+    }
+})
+
 
 // Form submission handler
 entryForm.addEventListener('submit', async (e) => {
@@ -116,9 +151,17 @@ deleteCancelBtn.addEventListener('click', async (e) => {
     deleteEntryPopup.style.display = 'none';
 })
 
+deleteExperienceCancelBtn.addEventListener('click', async (e) => {
+    deleteExperiencePopup.style.display = 'none';
+})
+
+deleteExperienceComfBtn.addEventListener('click', async (e) => {
+    await window.electronAPI.deleteExperienceEntry(lastClickedExperienceEntryId)
+    deleteExperiencePopup.style.display = 'none';
+    await loadEntries();
+})
+
 deleteConfirmBtn.addEventListener('click', async () => {
-    console.log(lastClickedEntryId);
-    console.log('deleting entry with id:', lastClickedEntryId);
     await window.electronAPI.deleteEntry(lastClickedEntryId)
     deleteEntryPopup.style.display = 'none';
     await loadEntries();
@@ -144,6 +187,19 @@ document.getElementById('editEntryForm').addEventListener('submit', async (e) =>
     await loadEntries(); // Refresh the table
     document.getElementById('editEntryPopup').style.display = 'none';
 });
+
+document.getElementById('editExperienceEntryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const updatedExperienceEntry = {
+        id: lastClickedExperienceEntryId,
+        experienceEntry: document.getElementById("editExperience").value,
+    };
+
+    await window.electronAPI.updateExperienceEntry(updatedExperienceEntry);
+    await loadEntries(); // Refresh the table
+    document.getElementById('editExperienceEntryPopup').style.display = 'none';
+});
+
 
 
 // Initial load
@@ -171,5 +227,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 deleteEntryPopup.style.display = 'block';
             }
     });
+
+    document.getElementById('experienceEntries').addEventListener('click', async (e) => {
+        const button = e.target.closest('button[data-id]');
+        if (button) {
+            lastClickedExperienceEntryId = parseInt(button.dataset.id, 10);
+            console.log('Stored ID:', lastClickedExperienceEntryId); // Verify in DevTools
+        }
+
+        if (button.classList.contains('edit-exp-btn')) {
+            const experienceEntry = await window.electronAPI.getExperienceEntryById(lastClickedExperienceEntryId);
+            if (experienceEntry) {
+                document.getElementById('editExperience').value = experienceEntry.experienceEntry;
+                document.getElementById('editExperienceEntryPopup').style.display = 'block';
+            }
+        } else if (button.classList.contains('delete-exp-btn')) {
+            deleteExperiencePopup.style.display = 'block';
+        }
+    });
+
+
+
 
 });
