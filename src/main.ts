@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, ipcRenderer} from 'electron';
+import {app, BrowserWindow, ipcMain} from 'electron';
 import path from 'path';
 import Database from 'better-sqlite3';
 let mainWindow: BrowserWindow;
@@ -99,11 +99,22 @@ ipcMain.handle('update-entry', (_, entry) => {
 
 ipcMain.handle('update-experience-entry', (_, entry) => {
     db.prepare(`
-        UPDATE experience_entries 
+        UPDATE experience_entries
         SET experienceEntry = ?
         WHERE id = ?
     `).run(
         entry.experienceEntry,
+        entry.id
+    );
+});
+
+ipcMain.handle('update-experience-rate-entry', (_, entry) => {
+    db.prepare(`
+        UPDATE experience_entries 
+        SET experienceEntryRating = ?
+        WHERE id = ?
+    `).run(
+        entry.experienceEntryRating,
         entry.id
     );
 });

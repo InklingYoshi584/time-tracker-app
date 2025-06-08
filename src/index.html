@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Time Tracker</title>
     <style>
@@ -117,7 +117,7 @@
 <div id="editExperienceEntryPopup" class="popup">
     <h2>Edit Experience Entry</h2>
     <form id="editExperienceEntryForm">
-        <label>Event: <input type="text" id="editExperience" required></label><br>
+        <label>Experience: <input type="text" id="editExperience" required></label><br>
         <button type="submit" id="editExperienceComfBtn">Save</button>
         <button type="button" id="editExperienceCancelBtn">Cancel</button>
     </form>
@@ -136,6 +136,19 @@
     <button id="deleteExperienceCancelBtn">No</button>
 </div>
 
+
+
+<div id="rateExperienceEntryPopup" class="popup">
+    <h2>Edit Experience Entry</h2>
+    <form id="rateExperienceEntryForm">
+        <label>Rate this Experience(1-10): <input type="number" min="1"
+                                                  max="10"
+                                                  oninput="this.value = Math.max(1, Math.min(10, parseInt(this.value) || 1))"
+                                                  id="rateExperience" required></label><br>
+        <button type="submit" id="rateExperienceComfBtn">Save</button>
+        <button type="button" id="rateExperienceCancelBtn">Cancel</button>
+    </form>
+</div>
 <script src="renderer.js"></script>
 </body>
 </html>

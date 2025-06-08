@@ -12,4 +12,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteExperienceEntry: (data: any) => ipcRenderer.invoke('delete-experience-entry', data),
     getExperienceEntryById: (data: any) => ipcRenderer.invoke('get-experience-entry-by-id', data),
     updateExperienceEntry: (data: any) => ipcRenderer.invoke('update-experience-entry', data),
+    updateExperienceRateEntry: (data: any) => ipcRenderer.invoke('update-experience-rate-entry', data),
 });

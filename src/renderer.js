@@ -13,6 +13,8 @@ const editEntryPopup = document.getElementById('editEntryPopup');
 const editEntryForm = document.getElementById('editEntryForm');
 const editCancelBtn = document.getElementById('editCancelBtn');
 
+const editExperienceCancelBtn = document.getElementById('editExperienceCancelBtn');
+
 const deleteEntryPopup = document.getElementById('deleteEntryPopup');
 const deleteCancelBtn = document.getElementById('deleteCancelBtn');
 const deleteConfirmBtn = document.getElementById('deleteComfBtn');
@@ -21,7 +23,7 @@ const deleteExperiencePopup = document.getElementById('deleteExperienceEntryPopu
 const deleteExperienceCancelBtn = document.getElementById('deleteExperienceCancelBtn');
 const deleteExperienceComfBtn = document.getElementById('deleteExperienceComfBtn');
 
-
+const rateExperiencePopup = document.getElementById('rateExperienceEntryPopup');
 
 let lastClickedEntryId = null;
 
@@ -147,21 +149,21 @@ editCancelBtn.addEventListener('click', () => {
     editEntryPopup.style.display = 'none';
 })
 
-deleteCancelBtn.addEventListener('click', async (e) => {
+deleteCancelBtn.addEventListener('click', () => {
     deleteEntryPopup.style.display = 'none';
 })
 
-deleteExperienceCancelBtn.addEventListener('click', async (e) => {
+deleteExperienceCancelBtn.addEventListener('click',  () => {
     deleteExperiencePopup.style.display = 'none';
 })
 
-deleteExperienceComfBtn.addEventListener('click', async (e) => {
+deleteExperienceComfBtn.addEventListener('click',  async () => {
     await window.electronAPI.deleteExperienceEntry(lastClickedExperienceEntryId)
     deleteExperiencePopup.style.display = 'none';
     await loadEntries();
 })
 
-deleteConfirmBtn.addEventListener('click', async () => {
+deleteConfirmBtn.addEventListener('click',  async () => {
     await window.electronAPI.deleteEntry(lastClickedEntryId)
     deleteEntryPopup.style.display = 'none';
     await loadEntries();
@@ -200,7 +202,26 @@ document.getElementById('editExperienceEntryForm').addEventListener('submit', as
     document.getElementById('editExperienceEntryPopup').style.display = 'none';
 });
 
+editExperienceCancelBtn.addEventListener('click', () => {
+    document.getElementById('editExperienceEntryPopup').style.display = 'none';
+})
 
+
+document.getElementById('rateExperienceEntryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const updatedExperienceEntryRating = {
+        id: lastClickedExperienceEntryId,
+        experienceEntryRating: document.getElementById("rateExperience").value,
+    };
+
+    await window.electronAPI.updateExperienceRateEntry(updatedExperienceEntryRating);
+    await loadEntries(); // Refresh the table
+    document.getElementById('rateExperienceEntryPopup').style.display = 'none';
+});
+
+document.getElementById("rateExperienceCancelBtn").addEventListener('click', () => {
+    document.getElementById('rateExperienceEntryPopup').style.display = 'none';
+})
 
 // Initial load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -243,6 +264,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } else if (button.classList.contains('delete-exp-btn')) {
             deleteExperiencePopup.style.display = 'block';
+        } else if (button.classList.contains('rate-exp-btn')) {
+            rateExperiencePopup.style.display = 'block';
         }
     });
 
