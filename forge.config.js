@@ -3,6 +3,12 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
+    appBundleId: 'online.inklingyoshi.timetracker',
+    executableName: 'time-tracker',
+    icon: 'icons/app', // .ico/.icns/.png
+    extraResource: [
+      'time-tracker.db',
+    ],
     asar: true,
   },
   rebuildConfig: {},
