@@ -30,13 +30,13 @@ let lastClickedEntryId = null;
 let currentDisplayDate = new Date();
 
 function formatDate(date) {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    return date.toLocaleDateString("en-CA").split('/').join("-"); // YYYY-MM-DD
 }
 
 async function updateDisplay() {
     // Update the header
     return document.getElementById('current-date-display').textContent =
-        currentDisplayDate.toLocaleDateString();
+        currentDisplayDate.toLocaleDateString("en-CA").split('/').join("-");
 }
 
 async function filterEntries() {
@@ -69,7 +69,6 @@ function formatTime(input) {
 // Load entries from the main process
 async function loadEntries() {
     await updateDisplay();
-
     const entries = await filterEntries();
     entriesTable.innerHTML = entries.map(entry => `
     <tr>
