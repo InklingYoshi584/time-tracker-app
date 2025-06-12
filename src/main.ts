@@ -59,10 +59,9 @@ ipcMain.handle('add-experience-entry', (_, {experience}) => {
 
 
 //handle time entry addition
-ipcMain.handle('add-entry', (_, { startTime, endTime, event }) => {
+ipcMain.handle('add-entry', (_, { startTime, endTime, event, date}) => {
     const duration = calculateDuration(startTime, endTime);
     if (duration === null) throw new Error('Invalid time range');
-    const date = new Date().toISOString().split('T')[0]; // Current date
 
 
     db.prepare(`
