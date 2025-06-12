@@ -88,7 +88,7 @@ async function loadEntries() {
         <td>${experienceEntry.experienceEntryRating}</td>
         <td><button class="edit-exp-btn" data-id="${experienceEntry.id}">Edit</button><button class="delete-exp-btn" data-id="${experienceEntry.id}">Delete</button><button class="rate-exp-btn" data-id="${experienceEntry.id}">Rate</button></td>
     </tr>
-    `)
+    `).join('')
 
 }
 
