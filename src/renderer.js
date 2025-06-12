@@ -118,13 +118,14 @@ entryForm.addEventListener('submit', async (e) => {
     let startTime = document.getElementById('addStartTime').value;
     let endTime = document.getElementById('addEndTime').value;
     const event = document.getElementById('addEvent').value;
+    let date = formatDate(currentDisplayDate);
 
     // Format times if needed
     if (!startTime.includes(':')) startTime = formatTime(startTime);
     if (!endTime.includes(':')) endTime = formatTime(endTime);
 
     try {
-        await window.electronAPI.addEntry({ startTime, endTime, event });
+        await window.electronAPI.addEntry({ startTime, endTime, event, date});
         addEntryPopup.style.display = 'none';
         await loadEntries();
         entryForm.reset();
