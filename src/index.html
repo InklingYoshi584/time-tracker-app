@@ -77,7 +77,27 @@
 <br>
 <br>
 <button id="addExpBtn">Add Experience Entry</button>
-
+<br>
+<br>
+<br>
+<br>
+<br>
+<table>
+    <thead>
+    <tr>
+        <th>Task</th>
+        <th>Deadline</th>
+        <th>Frequency</th>
+        <th>Priority</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="todo-entries"></tbody>
+</table>
+<br>
+<br>
+<br>
+<button id="addTodoBtn">Add Todo</button>
 
 <div id="addExperienceEntryPopup" class="popup">
     <h2>Add Experience Entry</h2>
@@ -149,6 +169,62 @@
         <button type="button" id="rateExperienceCancelBtn">Cancel</button>
     </form>
 </div>
+
+<div id="addTodoPopup" class="popup">
+    <h2>Add Todo</h2>
+    <form id="addTodoForm">
+        <label>Task: <input type="text" id="todoTask" required></label><br>
+        <label>Deadline: <input type="date" id="todoDeadline"></label><br>
+        <label>Frequency:
+            <select id="todoFrequency">
+                <option value="none">None</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+            </select>
+        </label><br>
+        <label>Importance:
+            <select id="todoImportance">
+                <option value="1">1 (Lowest)</option>
+                <option value="2">2</option>
+                <option value="3" selected>3 (Medium)</option>
+                <option value="4">4</option>
+                <option value="5">5 (Highest)</option>
+            </select>
+        </label><br>
+        <button type="submit">Add</button>
+        <button type="button" id="cancelTodoBtn">Cancel</button>
+    </form>
+</div>
+<div id="editTodoPopup" class="popup">
+    <h2>Edit Todo</h2>
+    <form id="editTodoForm">
+        <label>Task: <input type="text" id="editTodoTask" required></label><br>
+        <label>Deadline: <input type="date" id="editTodoDeadline"></label><br>
+        <label>Frequency:
+            <select id="editTodoFrequency">
+                <option value="none">None</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+            </select>
+        </label><br>
+        <label>Importance:
+            <select id="editTodoImportance">
+                <option value="1">1 (Lowest)</option>
+                <option value="2">2</option>
+                <option value="3" selected>3 (Medium)</option>
+                <option value="4">4</option>
+                <option value="5">5 (Highest)</option>
+            </select>
+        </label><br>
+        <button type="submit">Save</button>
+        <button type="button" id="cancelEditTodoBtn">Cancel</button>
+    </form>
+</div>
+
 <script src="renderer.js"></script>
 </body>
 </html>

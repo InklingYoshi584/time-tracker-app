@@ -1,7 +1,6 @@
 import {app, BrowserWindow, ipcMain} from 'electron';
 import path from 'path';
-import Database from 'better-sqlite3';
-let mainWindow: BrowserWindow;
+import Database from 'better-sqlite3';let mainWindow: BrowserWindow;
 // Initialize database
 const db = new Database('time-tracker.db');
 db.exec(`
@@ -25,15 +24,22 @@ db.exec(`
 `);
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS todos (
+    CREATE TABLE IF NOT EXISTS todos (
+                                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        deadline TEXT,
+                                         task TEXT NOT NULL,
+                                         frequency TEXT CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly', 'custom', 'none')),
+        importance INTEGER DEFAULT 3 CHECK(importance BETWEEN 1 AND 5),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todo_completions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task TEXT NOT NULL,
-    deadline TEXT,
-    frequency TEXT CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly', 'custom', 'none')),
-    importance INTEGER DEFAULT 3 CHECK(importance BETWEEN 1 AND 5),
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    completed BOOLEAN DEFAULT 0,
-    next_occurrence TEXT
+    todo_id INTEGER NOT NULL,
+    completion_date TEXT NOT NULL,
+    FOREIGN KEY(todo_id) REFERENCES todos(id)
   )
 `);
 
@@ -61,7 +67,7 @@ ipcMain.handle('get-entries', () => {
 });
 
 ipcMain.handle('add-experience-entry', (_, {experience}) => {
-    const date = new Date().toISOString().split('T')[0]; // Current date
+    const date = new Date().toLocaleDateString("en-ca"); // Current date
 
 
     db.prepare(`
@@ -190,6 +196,134 @@ ipcMain.handle('delete-experience-entry', (_, deleteid: number) => {
 })
 
 
+// Add task
+ipcMain.handle('add-todo', (_, todo) => {
+    const { task, deadline, frequency, importance } = todo;
+
+    // Auto-calculate deadline for recurring tasks
+    const effectiveDeadline = frequency !== 'none' ?
+        calculateNextOccurrence(frequency) :
+        deadline;
+
+    return db.prepare(`
+        INSERT INTO todos (task, deadline, frequency, importance)
+        VALUES (?, ?, ?, ?)
+    `).run(task, effectiveDeadline, frequency, importance);
+});
+
+// Get Todos (sorted by priority)
+ipcMain.handle('get-todos', () => {
+    return db.prepare(`
+        SELECT * FROM todos
+        WHERE
+            (frequency = 'none' OR
+             (frequency != 'none' AND (completed = 0 OR next_occurrence <= DATE('now'))))
+        ORDER BY
+            completed ASC,
+            CASE WHEN deadline IS NULL THEN 1 ELSE 0 END,
+            deadline ASC,
+            importance DESC,
+            id ASC
+    `).all();
+});
+
+// Update the toggle-todo handler
+ipcMain.handle('toggle-todo', (_, { id, date }) => {
+    // Check if this todo is already completed for the specified date
+    const existing = db.prepare(`
+        SELECT 1 FROM todo_completions 
+        WHERE todo_id = ? AND completion_date = ?
+    `).get(id, date);
+
+    if (existing) {
+        // Uncomplete for this date
+        db.prepare(`
+            DELETE FROM todo_completions
+            WHERE todo_id = ? AND completion_date = ?
+        `).run(id, date);
+        return { completed: false };
+    } else {
+        // Complete for this date
+        db.prepare(`
+            INSERT INTO todo_completions (todo_id, completion_date)
+            VALUES (?, ?)
+        `).run(id, date);
+        return { completed: true };
+    }
+});
+
+ipcMain.handle('get-todos-by-date', (_, date) => {
+    return db.prepare(`
+        SELECT
+            t.*,
+            EXISTS (
+                SELECT 1 FROM todo_completions c
+                WHERE c.todo_id = t.id AND c.completion_date = ?
+            ) as completed
+        FROM todos t
+        ORDER BY t.importance DESC, t.id ASC
+    `).all(date);
+});
+
+function calculateNextOccurrence(frequency: string, baseDate?: string): string | null {
+    const date = baseDate ? new Date(baseDate) : new Date();
+
+    switch(frequency) {
+        case 'daily':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'weekly':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'monthly':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'yearly':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
+        default:
+            return null;
+    }
+
+    return date.toLocaleDateString("en-ca");
+}
+
+
+function resetRecurringTasks() {
+}
+
+// Delete task entry
+ipcMain.handle('delete-todo', (_, id) => {
+    db.prepare('DELETE FROM todos WHERE id = ?').run(id);
+});
+
+// Add this with your other IPC handlers
+ipcMain.handle('update-todo', (_, todo) => {
+    // Auto-calculate deadline if frequency is set
+    const effectiveDeadline = todo.frequency !== 'none' ?
+        calculateNextOccurrence(todo.frequency) :
+        todo.deadline;
+
+    return db.prepare(`
+        UPDATE todos
+        SET task = ?,
+            deadline = ?,
+            frequency = ?,
+            importance = ?
+        WHERE id = ?
+    `).run(
+        todo.task,
+        effectiveDeadline,
+        todo.frequency,
+        todo.importance,
+        todo.id
+    );
+});
+
+ipcMain.handle('get-todo-by-id', (_, id) => {
+    return db.prepare('SELECT * FROM todos WHERE id = ?').get(id);
+});
+
 function calculateDuration(startTime: string, endTime: string): number | null {
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = endTime.split(':').map(Number);
@@ -200,6 +334,7 @@ function calculateDuration(startTime: string, endTime: string): number | null {
 
 app.whenReady().then(() => {
     createWindow();
+    resetRecurringTasks();
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
