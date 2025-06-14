@@ -24,6 +24,19 @@ db.exec(`
     )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task TEXT NOT NULL,
+    deadline TEXT,
+    frequency TEXT CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly', 'custom', 'none')),
+    importance INTEGER DEFAULT 3 CHECK(importance BETWEEN 1 AND 5),
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    completed BOOLEAN DEFAULT 0,
+    next_occurrence TEXT
+  )
+`);
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,
