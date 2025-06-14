@@ -25,6 +25,11 @@ const deleteExperienceComfBtn = document.getElementById('deleteExperienceComfBtn
 
 const rateExperiencePopup = document.getElementById('rateExperienceEntryPopup');
 
+const todoTable = document.getElementById('todo-entries');
+const addTodoBtn = document.getElementById('addTodoBtn');
+const addTodoPopup = document.getElementById('addTodoPopup');
+const addTodoForm = document.getElementById('addTodoForm');
+const cancelTodoBtn = document.getElementById('cancelTodoBtn');
 let lastClickedEntryId = null;
 
 let currentDisplayDate = new Date();
@@ -69,27 +74,57 @@ function formatTime(input) {
 // Load entries from the main process
 async function loadEntries() {
     await updateDisplay();
-    const entries = await filterEntries();
+    const dateStr = formatDate(currentDisplayDate);
+
+    // Load time entries
+    const entries = await window.electronAPI.getEntriesByDate(dateStr);
     entriesTable.innerHTML = entries.map(entry => `
-    <tr>
-      <td>${entry.startTime}</td>
-      <td>${entry.endTime}</td>
-      <td>${entry.event}</td>
-      <td>${entry.duration} min</td>
-      <td><button class="edit-btn" data-id="${entry.id}">Edit</button>  <button class="delete-btn" data-id="${entry.id}">Delete</button></td>
-    </tr>
-  `).join('');
+        <tr>
+            <td>${entry.startTime}</td>
+            <td>${entry.endTime}</td>
+            <td>${entry.event}</td>
+            <td>${entry.duration} min</td>
+            <td>
+                <button class="edit-btn" data-id="${entry.id}">Edit</button>
+                <button class="delete-btn" data-id="${entry.id}">Delete</button>
+            </td>
+        </tr>
+    `).join('');
 
+    // Load experience entries
     const experienceEntries = await window.electronAPI.getExperienceEntries();
-    experienceEntriesTable.innerHTML = experienceEntries.map(experienceEntry => `
-    <tr>
-        <td>${experienceEntry.experienceEntryDate}</td>
-        <td>${experienceEntry.experienceEntry}</td>
-        <td>${experienceEntry.experienceEntryRating}</td>
-        <td><button class="edit-exp-btn" data-id="${experienceEntry.id}">Edit</button><button class="delete-exp-btn" data-id="${experienceEntry.id}">Delete</button><button class="rate-exp-btn" data-id="${experienceEntry.id}">Rate</button></td>
-    </tr>
-    `).join('')
+    experienceEntriesTable.innerHTML = experienceEntries.map(expEntry => `
+        <tr>
+            <td>${expEntry.experienceEntryDate}</td>
+            <td>${expEntry.experienceEntry}</td>
+            <td>${expEntry.experienceEntryRating}</td>
+            <td>
+                <button class="edit-exp-btn" data-id="${expEntry.id}">Edit</button>
+                <button class="delete-exp-btn" data-id="${expEntry.id}">Delete</button>
+                <button class="rate-exp-btn" data-id="${expEntry.id}">Rate</button>
+            </td>
+        </tr>
+    `).join('');
 
+    // Load TODOs for current date with completion status
+    const todos = await window.electronAPI.getTodosByDate(dateStr);
+    todoTable.innerHTML = todos.map(todo => `
+        <tr style="${todo.completed ? 'color: #4CAF50; text-decoration: line-through' : ''}">
+            <td>${todo.task}</td>
+            <td>${todo.deadline || '-'}</td>
+            <td>${todo.frequency !== 'none' ? '🔄 ' + todo.frequency : ''}</td>
+            <td>${'★'.repeat(todo.importance)}</td>
+            <td>
+                <button class="complete-todo" 
+                        data-id="${todo.id}"
+                        style="background-color: ${todo.completed ? '#4CAF50' : '#f0f0f0'}">
+                    ${todo.completed ? 'Completed ✓' : 'Complete'}
+                </button>
+                <button class="edit-todo" data-id="${todo.id}">Edit</button>
+                <button class="delete-todo" data-id="${todo.id}">Delete ✗</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 document.getElementById('addExpBtn').addEventListener('click', () => {
@@ -223,6 +258,51 @@ document.getElementById("rateExperienceCancelBtn").addEventListener('click', () 
     document.getElementById('rateExperienceEntryPopup').style.display = 'none';
 })
 
+editTodoForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const updatedTodo = {
+        id: lastClickedTodoId,
+        task: document.getElementById('editTodoTask').value,
+        deadline: document.getElementById('editTodoDeadline').value || null,
+        frequency: document.getElementById('editTodoFrequency').value,
+        importance: parseInt(document.getElementById('editTodoImportance').value)
+    };
+
+    await window.electronAPI.updateTodo(updatedTodo);
+    editTodoPopup.style.display = 'none';
+    await loadEntries(); // Refresh the display
+});
+
+// Cancel edit button
+cancelEditTodoBtn.addEventListener('click', () => {
+    editTodoPopup.style.display = 'none';
+    editTodoForm.reset();
+});
+
+
+addTodoBtn.addEventListener('click', () => {
+    addTodoPopup.style.display = 'block';
+});
+
+cancelTodoBtn.addEventListener('click', () => {
+    addTodoPopup.style.display = 'none';
+    addTodoForm.reset();
+});
+
+addTodoForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const task = document.getElementById('todoTask').value;
+    const deadline = document.getElementById('todoDeadline').value || null;
+    const frequency = document.getElementById('todoFrequency').value;
+    const importance = parseInt(document.getElementById('todoImportance').value);
+
+    await window.electronAPI.addTodo({ task, deadline, frequency, importance });
+    addTodoPopup.style.display = 'none';
+    await loadEntries();
+    addTodoForm.reset();
+});
+
 // Initial load
 document.addEventListener('DOMContentLoaded', async () => {
     currentDisplayDate = new Date(); // Today
@@ -266,10 +346,56 @@ document.addEventListener('DOMContentLoaded', async () => {
             deleteExperiencePopup.style.display = 'block';
         } else if (button.classList.contains('rate-exp-btn')) {
             rateExperiencePopup.style.display = 'block';
+        }}
+    )
+    todoTable.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const id = btn.dataset.id;
+        if (btn.classList.contains('complete-todo')) {
+            const dateStr = formatDate(currentDisplayDate);
+            await window.electronAPI.toggleTodo({
+                id: id,
+                date: dateStr
+            });
+            await loadEntries(); // Refresh all entries
+        } else if (btn.classList.contains('delete-todo')) {
+            await window.electronAPI.deleteTodo(id);
+            await loadEntries(); // Refresh all entries
+        } else if (btn.classList.contains('edit-todo')) {
+            lastClickedTodoId = id;
+            const todo = await window.electronAPI.getTodoById(id);
+
+            if (todo) {
+                document.getElementById('editTodoTask').value = todo.task;
+                document.getElementById('editTodoDeadline').value = todo.deadline || '';
+                document.getElementById('editTodoFrequency').value = todo.frequency;
+                document.getElementById('editTodoImportance').value = todo.importance;
+
+                editTodoPopup.style.display = 'block';
+            }
         }
     });
 
+    document.getElementById('editTodoFrequency').addEventListener('change', function() {
+        const deadlineField = document.getElementById('editTodoDeadline');
+        if (this.value !== 'none') {
+            deadlineField.disabled = true;
+            deadlineField.value = '';
+        } else {
+            deadlineField.disabled = false;
+        }
+    });
 
-
-
+    // Same for add form
+    document.getElementById('todoFrequency').addEventListener('change', function() {
+        const deadlineField = document.getElementById('todoDeadline');
+        if (this.value !== 'none') {
+            deadlineField.disabled = true;
+            deadlineField.value = '';
+        } else {
+            deadlineField.disabled = false;
+        }
+    });
 });
