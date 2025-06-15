@@ -1,0 +1,13 @@
+name: Build
+on: push
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm install
+      - run: npm run make
+      - uses: actions/upload-artifact@v3
+        with:
+          name: installer
+          path: out/make/nsis/*.exe
