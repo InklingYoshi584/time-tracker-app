@@ -139,6 +139,11 @@ addExperienceEntryForm.addEventListener('submit', async (e) => {
 })
 
 
+document.getElementById('addExperienceEntryCancelBtn').addEventListener('click', () => {
+    addExperienceEntryPopup.style.display = 'none';
+    addExperienceEntryForm.reset();
+})
+
 // Form submission handler
 entryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
