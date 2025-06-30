@@ -24,15 +24,45 @@ db.exec(`
 `);
 
 db.exec(`
-    CREATE TABLE IF NOT EXISTS todos (
-                                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        deadline TEXT,
-                                         task TEXT NOT NULL,
-                                         frequency TEXT CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly', 'custom', 'none')),
-        importance INTEGER DEFAULT 3 CHECK(importance BETWEEN 1 AND 5),
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
+  CREATE TABLE IF NOT EXISTS todos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deadline TEXT,
+    task TEXT NOT NULL,
+    frequency TEXT CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly', 'custom', 'none')),
+    importance INTEGER DEFAULT 3 CHECK(importance BETWEEN 1 AND 5),
+    created_at TEXT DEFAULT (DATE('now')),
+    disabled_date TEXT
+  )
 `);
+
+// Update existing records to use date format
+try {
+    db.exec(`
+        UPDATE todos 
+        SET created_at = DATE(created_at)
+        WHERE created_at LIKE '%-%-% %:%:%'
+    `);
+} catch (err) {
+    console.log('No timestamp records to update');
+}
+
+// Update existing records to use current date if they're null
+try {
+    db.exec(`
+        UPDATE todos 
+        SET created_at = CURRENT_DATE
+        WHERE created_at IS NULL
+    `);
+} catch (err) {
+    console.log('No records to update');
+}
+
+// Remove the problematic ALTER TABLE statement and replace with this:
+try {
+    db.prepare('SELECT disabled_date FROM todos LIMIT 1').get();
+} catch {
+    db.exec('ALTER TABLE todos ADD COLUMN disabled_date TEXT');
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS todo_completions (
@@ -205,10 +235,33 @@ ipcMain.handle('add-todo', (_, todo) => {
         calculateNextOccurrence(frequency) :
         deadline;
 
-    return db.prepare(`
+    db.prepare(`
         INSERT INTO todos (task, deadline, frequency, importance)
         VALUES (?, ?, ?, ?)
     `).run(task, effectiveDeadline, frequency, importance);
+
+    try {
+        db.exec(`
+        UPDATE todos 
+        SET created_at = DATE(created_at)
+        WHERE created_at LIKE '%-%-% %:%:%'
+    `);
+    } catch (err) {
+        console.log('No timestamp records to update');
+    }
+
+    if (frequency === 'none') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowDate = tomorrow.toLocaleDateString("en-ca");
+
+        db.prepare(`
+            UPDATE todos 
+            SET disabled_date = ?
+            WHERE id = last_insert_rowid()
+        `).run(tomorrowDate);
+    }
+
 });
 
 // Get Todos (sorted by priority)
@@ -227,9 +280,13 @@ ipcMain.handle('get-todos', () => {
     `).all();
 });
 
-// Update the toggle-todo handler
+// Update the toggle-todos handler
 ipcMain.handle('toggle-todo', (_, { id, date }) => {
-    // Check if this todo is already completed for the specified date
+    // Get the todos details including frequency with proper typing
+    const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(id) as Todo;
+    if (!todo) throw new Error('Todo not found');
+
+    // Check if already completed for this date
     const existing = db.prepare(`
         SELECT 1 FROM todo_completions 
         WHERE todo_id = ? AND completion_date = ?
@@ -241,6 +298,15 @@ ipcMain.handle('toggle-todo', (_, { id, date }) => {
             DELETE FROM todo_completions
             WHERE todo_id = ? AND completion_date = ?
         `).run(id, date);
+
+        // For recurring tasks, reset deadline if undone on same day
+        if (todo.frequency !== 'none' && todo.deadline === date) {
+            const originalDeadline = calculateNextOccurrence(todo.frequency, todo.created_at);
+            db.prepare(`
+                UPDATE todos SET deadline = ? WHERE id = ?
+            `).run(originalDeadline, id);
+        }
+
         return { completed: false };
     } else {
         // Complete for this date
@@ -248,6 +314,15 @@ ipcMain.handle('toggle-todo', (_, { id, date }) => {
             INSERT INTO todo_completions (todo_id, completion_date)
             VALUES (?, ?)
         `).run(id, date);
+
+        // For recurring tasks, update deadline to next occurrence
+        if (todo.frequency !== 'none') {
+            const nextDeadline = calculateNextOccurrence(todo.frequency, date);
+            db.prepare(`
+                UPDATE todos SET deadline = ? WHERE id = ?
+            `).run(nextDeadline, id);
+        }
+
         return { completed: true };
     }
 });
@@ -261,8 +336,11 @@ ipcMain.handle('get-todos-by-date', (_, date) => {
                 WHERE c.todo_id = t.id AND c.completion_date = ?
             ) as completed
         FROM todos t
+        WHERE 
+            t.created_at <= ? AND 
+            (t.disabled_date IS NULL OR t.disabled_date > ?)
         ORDER BY t.importance DESC, t.id ASC
-    `).all(date);
+    `).all(date, date, date);
 });
 
 function calculateNextOccurrence(frequency: string, baseDate?: string): string | null {
@@ -289,12 +367,15 @@ function calculateNextOccurrence(frequency: string, baseDate?: string): string |
 }
 
 
-function resetRecurringTasks() {
-}
 
 // Delete task entry
-ipcMain.handle('delete-todo', (_, id) => {
-    db.prepare('DELETE FROM todos WHERE id = ?').run(id);
+ipcMain.handle('delete-todo', (_, id, date) => {
+    db.prepare(`
+        UPDATE todos 
+        SET disabled_date = ?
+        WHERE id = ?
+    `).run(date, id);
+    console.log("function delete-todo called with id:", id, "and date:", date);
 });
 
 // Add this with your other IPC handlers
@@ -334,7 +415,6 @@ function calculateDuration(startTime: string, endTime: string): number | null {
 
 app.whenReady().then(() => {
     createWindow();
-    resetRecurringTasks();
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -343,3 +423,14 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
+
+
+interface Todo {
+    id: number;
+    deadline: string | null;
+    task: string;
+    frequency: string;
+    importance: number;
+    created_at: string;
+    disabled_date?: string | null;
+}
