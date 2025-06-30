@@ -44,13 +44,6 @@ async function updateDisplay() {
         currentDisplayDate.toLocaleDateString("en-CA").split('/').join("-");
 }
 
-async function filterEntries() {
-
-    // Load entries for this date
-    return await window.electronAPI.getEntriesByDate(
-        formatDate(currentDisplayDate)
-    );
-}
 
 // Navigation handlers
 document.getElementById('prev-day').addEventListener('click', () => {
@@ -112,7 +105,7 @@ async function loadEntries() {
         <tr style="${todo.completed ? 'color: #4CAF50; text-decoration: line-through' : ''}">
             <td>${todo.task}</td>
             <td>${todo.deadline || '-'}</td>
-            <td>${todo.frequency !== 'none' ? '🔄 ' + todo.frequency : ''}</td>
+            <td>${todo.frequency !== 'none' ? '🔄 ' + todo.frequency : '-'}</td>
             <td>${'★'.repeat(todo.importance)}</td>
             <td>
                 <button class="complete-todo" 
@@ -121,7 +114,7 @@ async function loadEntries() {
                     ${todo.completed ? 'Completed ✓' : 'Complete'}
                 </button>
                 <button class="edit-todo" data-id="${todo.id}">Edit</button>
-                <button class="delete-todo" data-id="${todo.id}">Delete ✗</button>
+                ${(todo.frequency === 'none' || !todo.disabled_date) ? `<button class="delete-todo" data-id="${todo.id}">Delete ✗</button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -361,7 +354,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             await loadEntries(); // Refresh all entries
         } else if (btn.classList.contains('delete-todo')) {
-            await window.electronAPI.deleteTodo(id);
+            await console.log('Deleting TODO with ID:', id); // Verify ID
+            await console.log('Current Display Date:', currentDisplayDate); // Verify date
+            await window.electronAPI.deleteTodo(id, formatDate(currentDisplayDate));
             await loadEntries(); // Refresh all entries
         } else if (btn.classList.contains('edit-todo')) {
             lastClickedTodoId = id;
