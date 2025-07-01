@@ -251,15 +251,15 @@ ipcMain.handle('add-todo', (_, todo) => {
     }
 
     if (frequency === 'none') {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowDate = tomorrow.toLocaleDateString("en-ca");
+        const deadlineDate = new Date(deadline);
+        deadlineDate.setDate(deadlineDate.getDate() + 1);
+        const disabledDate = deadlineDate.toLocaleDateString("en-ca");
 
         db.prepare(`
             UPDATE todos 
             SET disabled_date = ?
             WHERE id = last_insert_rowid()
-        `).run(tomorrowDate);
+        `).run(disabledDate);
     }
 
 });
@@ -384,6 +384,18 @@ ipcMain.handle('update-todo', (_, todo) => {
     const effectiveDeadline = todo.frequency !== 'none' ?
         calculateNextOccurrence(todo.frequency) :
         todo.deadline;
+
+    if (todo.frequency === 'none') {
+        const deadlineDate = new Date(todo.deadline);
+        deadlineDate.setDate(deadlineDate.getDate() + 1);
+        const disabledDate = deadlineDate.toLocaleDateString("en-ca");
+
+        db.prepare(`
+            UPDATE todos 
+            SET disabled_date = ?
+            WHERE id = ?
+            `).run(disabledDate, todo.id);
+    }
 
     return db.prepare(`
         UPDATE todos
