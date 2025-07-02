@@ -2,7 +2,7 @@
   "name": "time-tracker-app",
   "author": "InklingYoshi584",
   "license": "AGPL-3.0-or-later",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "A time tracking application built with Electron and TypeScript.",
   "bugs": {
     "url": "https://github.com/InklingYoshi584/time-tracker-app/issues"
