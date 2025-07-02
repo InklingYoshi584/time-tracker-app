@@ -264,6 +264,7 @@ ipcMain.handle('add-todo', (_, todo) => {
 
 });
 
+//deprecated
 // Get Todos (sorted by priority)
 ipcMain.handle('get-todos', () => {
     return db.prepare(`
@@ -331,10 +332,16 @@ ipcMain.handle('get-todos-by-date', (_, date) => {
     return db.prepare(`
         SELECT
             t.*,
-            EXISTS (
-                SELECT 1 FROM todo_completions c
-                WHERE c.todo_id = t.id AND c.completion_date = ?
-            ) as completed
+            CASE 
+                WHEN t.frequency = 'none' THEN EXISTS (
+                    SELECT 1 FROM todo_completions c
+                    WHERE c.todo_id = t.id
+                )
+                ELSE EXISTS (
+                    SELECT 1 FROM todo_completions c
+                    WHERE c.todo_id = t.id AND c.completion_date = ?
+                )
+            END as completed
         FROM todos t
         WHERE 
             t.created_at <= ? AND 
